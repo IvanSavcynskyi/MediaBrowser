@@ -1,0 +1,14 @@
+{
+  "app": {
+    "threads_num": 2,
+    "log": {
+      "log_path": "./logs",
+      "log_level": "info"
+    }
+  },
+  "custom_config": {
+    "media": {
+      "root": "E:/University/OOP_project/MediaBrowser/media"
+    }
+  }
+}

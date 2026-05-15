@@ -1,0 +1,6 @@
+build/
+build-*/
+vcpkg_installed/
+media/
+logs/
+frontend/node_modules/
