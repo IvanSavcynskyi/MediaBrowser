@@ -1,6 +1,7 @@
 build/
 build-*/
 vcpkg_installed/
+.vcpkg-cache/
 media/
 logs/
 frontend/node_modules/

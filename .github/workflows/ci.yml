@@ -14,9 +14,6 @@ jobs:
     runs-on: windows-latest
 
     env:
-      VCPKG_ROOT: ${{ runner.temp }}\vcpkg
-      VCPKG_DOWNLOADS: ${{ runner.temp }}\vcpkg-downloads
-      VCPKG_BINARY_SOURCES: clear;files,${{ runner.temp }}\vcpkg-binary-cache,readwrite
       VCPKG_DEFAULT_TRIPLET: x64-windows
       CMAKE_BUILD_TYPE: Release
 
@@ -34,12 +31,23 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Prepare vcpkg environment
+        shell: pwsh
+        run: |
+          $vcpkgRoot = Join-Path $env:RUNNER_TEMP "vcpkg"
+          $vcpkgDownloads = Join-Path $env:GITHUB_WORKSPACE ".vcpkg-cache\downloads"
+          $vcpkgBinaryCache = Join-Path $env:GITHUB_WORKSPACE ".vcpkg-cache\binary"
+
+          "VCPKG_ROOT=$vcpkgRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_DOWNLOADS=$vcpkgDownloads" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VCPKG_BINARY_SOURCES=clear;files,$vcpkgBinaryCache,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Append
+
       - name: Cache vcpkg packages
         uses: actions/cache@v4
         with:
           path: |
-            ${{ runner.temp }}\vcpkg-downloads
-            ${{ runner.temp }}\vcpkg-binary-cache
+            .vcpkg-cache/downloads
+            .vcpkg-cache/binary
           key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-
