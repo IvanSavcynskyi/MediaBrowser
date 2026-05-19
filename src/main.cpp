@@ -1,4 +1,7 @@
 #include <drogon/drogon.h>
+#include <cstdint>
+#include <cstdlib>
+#include <string>
 #include "services/MediaLibrary.h"
 #include "services/StreamingService.h"
 #include "controllers/ApiMediaController.h"
@@ -9,11 +12,28 @@ namespace fs = std::filesystem;
 
 static fs::path readMediaRootFromConfig()
 {
+    if (const char *mediaRoot = std::getenv("MEDIA_ROOT"))
+    {
+        fs::path p(mediaRoot);
+        p = fs::weakly_canonical(p);
+        std::cout << "Media root: " << p << std::endl;
+        return p;
+    }
+
     const Json::Value &cfg = drogon::app().getCustomConfig();
     fs::path p(cfg["media"]["root"].asString());
     p = fs::weakly_canonical(p);
     std::cout << "Media root: " << p << std::endl;
     return p;
+}
+
+static uint16_t readPort()
+{
+    if (const char *port = std::getenv("PORT"))
+    {
+        return static_cast<uint16_t>(std::stoi(port));
+    }
+    return 8080;
 }
 
 int main()
@@ -33,5 +53,5 @@ int main()
     ApiMediaController::init(catalog);
     MediaController::init(catalog, streaming);
 
-    drogon::app().addListener("0.0.0.0", 8080).run();
+    drogon::app().addListener("0.0.0.0", readPort()).run();
 }
