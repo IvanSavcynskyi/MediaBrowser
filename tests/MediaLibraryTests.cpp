@@ -1,5 +1,4 @@
 #include "../src/services/FileScanner.h"
-#include "../src/services/MediaLibrary.h"
 
 #include <filesystem>
 #include <fstream>
@@ -61,38 +60,6 @@ void fileScannerFiltersByMediaKind()
     fs::remove_all(root);
 }
 
-void mediaLibraryPersistsAndRefreshesSqliteCatalog()
-{
-    const auto root = makeTestRoot();
-    const auto videoPath = root / "videos" / "movie.mp4";
-    const auto audioPath = root / "music" / "track.mp3";
-    const auto imagePath = root / "images" / "photo.jpg";
-
-    writeFile(videoPath, "video");
-    writeFile(audioPath, "audio");
-    writeFile(imagePath, "image");
-
-    MediaLibrary library;
-    library.loadFromRoot(root);
-
-    expect(fs::exists(root / "media_browser.sqlite3"), "SQLite database should be created in media root");
-    expect(library.size() == 3, "Library should contain all supported media files");
-    expect(library.items(MediaKind::Video).size() == 1, "Library should expose one video");
-    expect(library.items(MediaKind::Audio).size() == 1, "Library should expose one audio file");
-    expect(library.items(MediaKind::Image).size() == 1, "Library should expose one image");
-
-    const auto *video = library.items(MediaKind::Video).front();
-    expect(video->mime() == "video/mp4", "Video MIME type should be persisted and restored");
-    expect(library.findById(video->id()) == video, "findById should return the loaded item");
-
-    fs::remove(audioPath);
-    library.loadFromRoot(root);
-
-    expect(library.size() == 2, "Library should remove missing files after rescan");
-    expect(library.items(MediaKind::Audio).empty(), "Removed audio file should disappear from catalog");
-
-    fs::remove_all(root);
-}
 } // namespace
 
 int main()
@@ -100,7 +67,6 @@ int main()
     try
     {
         fileScannerFiltersByMediaKind();
-        mediaLibraryPersistsAndRefreshesSqliteCatalog();
     }
     catch (const std::exception &ex)
     {

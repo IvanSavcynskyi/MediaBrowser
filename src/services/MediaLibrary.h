@@ -9,11 +9,15 @@
 #include "IMediaCatalog.h"
 #include "MediaRepository.h"
 
+class SupabaseStorageScanner;
+
 class MediaLibrary : public IMediaCatalog
 {
 public:
     MediaLibrary() = default;
     void loadFromRoot(const std::filesystem::path &root);
+    void loadFromSupabase(const std::string &databaseUrl,
+                          const SupabaseStorageScanner &storage);
 
     std::vector<const MediaItem *> items(MediaKind kind) const override;
     const MediaItem *findById(const std::string &id) const override;
@@ -36,7 +40,6 @@ private:
     std::vector<std::unique_ptr<MediaItem>> items_;
     std::unordered_map<std::string, const MediaItem *> byId_;
 
-    static std::filesystem::path databasePathForRoot(const std::filesystem::path &root);
     std::vector<MediaRecord> scanRecords(const std::filesystem::path &root) const;
     void appendRecord(const MediaRecord &record);
 };

@@ -2,7 +2,6 @@ FROM node:22-bookworm
 
 ENV VCPKG_ROOT=/opt/vcpkg
 ENV VCPKG_DEFAULT_TRIPLET=x64-linux
-ENV MEDIA_ROOT=/app/media
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -38,8 +37,6 @@ RUN cmake -S . -B build -G Ninja \
     -DVCPKG_MANIFEST_INSTALL=OFF \
     -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
     && cmake --build build --config Release
-
-RUN mkdir -p "$MEDIA_ROOT"
 
 EXPOSE 8080
 

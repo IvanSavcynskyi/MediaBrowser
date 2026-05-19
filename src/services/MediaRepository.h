@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -10,7 +9,8 @@
 struct MediaRecord
 {
     std::string id;
-    std::filesystem::path path;
+    std::string objectPath;
+    std::string storageUrl;
     MediaKind kind;
     std::uintmax_t size;
     std::string mimeType;
@@ -19,20 +19,17 @@ struct MediaRecord
 class MediaRepository
 {
 public:
-    explicit MediaRepository(std::filesystem::path databasePath);
-    ~MediaRepository();
+    explicit MediaRepository(std::string databaseUrl);
+    ~MediaRepository() = default;
 
     MediaRepository(const MediaRepository &) = delete;
     MediaRepository &operator=(const MediaRepository &) = delete;
 
     void initialize();
-    void synchronize(const std::filesystem::path &root,
+    void synchronize(const std::string &bucket,
                      const std::vector<MediaRecord> &records);
-    std::vector<MediaRecord> listByRoot(const std::filesystem::path &root) const;
+    std::vector<MediaRecord> listByBucket(const std::string &bucket) const;
 
 private:
-    struct sqlite3 *db_{};
-    std::filesystem::path databasePath_;
-
-    void execute(const char *sql) const;
+    std::string databaseUrl_;
 };

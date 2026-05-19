@@ -1,13 +1,16 @@
 #include "MediaLibrary.h"
 #include "FileScanner.h"
 #include "MediaRepository.h"
+#include "SupabaseStorageScanner.h"
 
 #include "../domain/VideoItem.h"
 #include "../domain/AudioItem.h"
 #include "../domain/ImageItem.h"
+#include "../../utils/PathUtf8.h"
 
 #include <array>
 #include <cctype>
+#include <cstdlib>
 #include <filesystem>
 #include <algorithm>
 #include <stdexcept>
@@ -65,11 +68,6 @@ std::unique_ptr<MediaItem> MediaLibrary::ItemFactory::create(MediaKind kind,
     throw std::logic_error("Unsupported media kind");
 }
 
-fs::path MediaLibrary::databasePathForRoot(const fs::path &root)
-{
-    return root / "media_browser.sqlite3";
-}
-
 std::vector<MediaRecord> MediaLibrary::scanRecords(const fs::path &root) const
 {
     std::vector<MediaRecord> records;
@@ -86,7 +84,8 @@ std::vector<MediaRecord> MediaLibrary::scanRecords(const fs::path &root) const
         {
             records.push_back(MediaRecord{
                 ItemFactory::makeId(p),
-                p,
+                pathToUtf8(p),
+                pathToUtf8(p),
                 kind,
                 fs::file_size(p),
                 ItemFactory::mimeFromExt(p),
@@ -100,7 +99,7 @@ std::vector<MediaRecord> MediaLibrary::scanRecords(const fs::path &root) const
 void MediaLibrary::appendRecord(const MediaRecord &record)
 {
     auto item = ItemFactory::create(record.kind,
-                                    record.path,
+                                    fs::u8path(record.objectPath),
                                     record.id,
                                     record.size,
                                     record.mimeType);
@@ -113,11 +112,44 @@ void MediaLibrary::loadFromRoot(const fs::path &root)
     items_.clear();
     byId_.clear();
 
-    MediaRepository repository(databasePathForRoot(root));
-    repository.initialize();
-    repository.synchronize(root, scanRecords(root));
+    const char *databaseUrl = std::getenv("DATABASE_URL");
+    if (!databaseUrl)
+        throw std::runtime_error("DATABASE_URL is not set");
 
-    for (const auto &record : repository.listByRoot(root))
+    MediaRepository repository(databaseUrl);
+    repository.initialize();
+    repository.synchronize("local", scanRecords(root));
+
+    for (const auto &record : repository.listByBucket("local"))
+    {
+        appendRecord(record);
+    }
+
+    const struct
+    {
+        bool operator()(const std::unique_ptr<MediaItem> &lhs,
+                        const std::unique_ptr<MediaItem> &rhs) const
+        {
+            if (lhs->kind() != rhs->kind())
+                return static_cast<int>(lhs->kind()) < static_cast<int>(rhs->kind());
+            return lhs->title() < rhs->title();
+        }
+    } sortByKindAndTitle;
+
+    std::sort(items_.begin(), items_.end(), sortByKindAndTitle);
+}
+
+void MediaLibrary::loadFromSupabase(const std::string &databaseUrl,
+                                    const SupabaseStorageScanner &storage)
+{
+    items_.clear();
+    byId_.clear();
+
+    MediaRepository repository(databaseUrl);
+    repository.initialize();
+    repository.synchronize(storage.bucket(), storage.scan());
+
+    for (const auto &record : repository.listByBucket(storage.bucket()))
     {
         appendRecord(record);
     }

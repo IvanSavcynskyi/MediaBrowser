@@ -1,15 +1,15 @@
 #include "StreamingService.h"
 #include "IMediaCatalog.h"
+#include "SupabaseStorageScanner.h"
 
 #include <drogon/HttpResponse.h>
-#include <filesystem>
+#include <utility>
 
 #include "../../utils/PathUtf8.h"
 
-namespace fs = std::filesystem;
-
-StreamingService::StreamingService(std::shared_ptr<const IMediaCatalog> library)
-    : library_(library) {}
+StreamingService::StreamingService(std::shared_ptr<const IMediaCatalog> library,
+                                   std::shared_ptr<const SupabaseStorageScanner> storage)
+    : library_(std::move(library)), storage_(std::move(storage)) {}
 
 drogon::HttpResponsePtr StreamingService::serveById(const std::string &id) const
 {
@@ -24,14 +24,14 @@ drogon::HttpResponsePtr StreamingService::serveById(const std::string &id) const
         return drogon::HttpResponse::newNotFoundResponse();
     }
 
-    const fs::path p = item->path();
-    if (!fs::exists(p) || !fs::is_regular_file(p))
+    if (!storage_)
     {
         return drogon::HttpResponse::newNotFoundResponse();
     }
 
-    auto resp = drogon::HttpResponse::newFileResponse(pathToUtf8(p));
-    resp->setContentTypeString(item->mime());
+    auto resp = drogon::HttpResponse::newHttpResponse();
+    resp->setStatusCode(drogon::k302Found);
+    resp->addHeader("Location", storage_->presignedGetUrl(pathToUtf8(item->path())));
 
     return resp;
 }

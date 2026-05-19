@@ -6,14 +6,17 @@
 #include "IStreamingService.h"
 
 class IMediaCatalog;
+class SupabaseStorageScanner;
 
 class StreamingService : public IStreamingService
 {
 public:
-    explicit StreamingService(std::shared_ptr<const IMediaCatalog> library);
+    StreamingService(std::shared_ptr<const IMediaCatalog> library,
+                     std::shared_ptr<const SupabaseStorageScanner> storage);
 
     drogon::HttpResponsePtr serveById(const std::string &id) const override;
 
 private:
     std::shared_ptr<const IMediaCatalog> library_;
+    std::shared_ptr<const SupabaseStorageScanner> storage_;
 };

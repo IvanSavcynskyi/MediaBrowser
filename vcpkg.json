@@ -1,7 +1,10 @@
 {
   "builtin-baseline": "39a6cc0e44641977a7ccdfdb01a14eaf832aa330",
   "dependencies": [
+    "curl",
     "drogon",
-    "sqlite3"
+    "libpqxx",
+    "openssl",
+    "tinyxml2"
   ]
 }
