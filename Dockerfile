@@ -35,6 +35,8 @@ COPY . .
 
 RUN cd frontend && npm run build
 
+RUN mkdir -p logs
+
 RUN cmake -S . -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DVCPKG_INSTALLED_DIR=/app/vcpkg_installed \
