@@ -80,7 +80,10 @@ void MediaRepository::initialize()
             updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         );
     )SQL");
+    tx.exec("ALTER TABLE media_files ADD COLUMN IF NOT EXISTS bucket TEXT NOT NULL DEFAULT 'MediaBrowser';");
     tx.exec("ALTER TABLE media_files ADD COLUMN IF NOT EXISTS storage_url TEXT NOT NULL DEFAULT '';");
+    tx.exec("ALTER TABLE media_files ADD COLUMN IF NOT EXISTS last_scan_token TEXT NOT NULL DEFAULT '';");
+    tx.exec("ALTER TABLE media_files ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();");
     tx.exec("CREATE INDEX IF NOT EXISTS idx_media_files_bucket_kind_title "
             "ON media_files(bucket, kind, title);");
     tx.commit();

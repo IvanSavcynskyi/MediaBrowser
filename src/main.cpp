@@ -97,26 +97,34 @@ static uint16_t readPort()
 
 int main()
 {
-    std::cout << "START\n";
-    loadDotEnv();
-    drogon::app().loadConfigFile("config.json");
+    try
+    {
+        std::cout << "START\n";
+        loadDotEnv();
+        drogon::app().loadConfigFile("config.json");
 
-    auto storage = std::make_shared<SupabaseStorageScanner>(
-        readEnv("SUPABASE_S3_ENDPOINT", "https://cdumjkcrnuqaacgfudqd.storage.supabase.co/storage/v1/s3"),
-        readEnv("SUPABASE_REGION", "eu-west-1"),
-        requireEnv("SUPABASE_ACCESS_ID"),
-        requireEnv("SUPABASE_ACCESS_KEY"),
-        readEnv("SUPABASE_BUCKET", "MediaBrowser"));
+        auto storage = std::make_shared<SupabaseStorageScanner>(
+            readEnv("SUPABASE_S3_ENDPOINT", "https://cdumjkcrnuqaacgfudqd.storage.supabase.co/storage/v1/s3"),
+            readEnv("SUPABASE_REGION", "eu-west-1"),
+            requireEnv("SUPABASE_ACCESS_ID"),
+            requireEnv("SUPABASE_ACCESS_KEY"),
+            readEnv("SUPABASE_BUCKET", "MediaBrowser"));
 
-    auto lib = std::make_shared<MediaLibrary>();
-    std::cout << "Scanning Supabase Storage bucket..." << std::endl;
-    lib->loadFromSupabase(requireEnv("DATABASE_URL"), *storage);
+        auto lib = std::make_shared<MediaLibrary>();
+        std::cout << "Scanning Supabase Storage bucket..." << std::endl;
+        lib->loadFromSupabase(requireEnv("DATABASE_URL"), *storage);
 
-    std::shared_ptr<const IMediaCatalog> catalog = lib;
-    auto streaming = std::make_shared<StreamingService>(catalog, storage);
+        std::shared_ptr<const IMediaCatalog> catalog = lib;
+        auto streaming = std::make_shared<StreamingService>(catalog, storage);
 
-    ApiMediaController::init(catalog);
-    MediaController::init(catalog, streaming);
+        ApiMediaController::init(catalog);
+        MediaController::init(catalog, streaming);
 
-    drogon::app().addListener("0.0.0.0", readPort()).run();
+        drogon::app().addListener("0.0.0.0", readPort()).run();
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << "Startup failed: " << ex.what() << std::endl;
+        return 1;
+    }
 }

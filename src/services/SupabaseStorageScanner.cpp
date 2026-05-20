@@ -177,7 +177,15 @@ std::string kindValue(MediaKind kind)
 
 std::string makeId(const std::string &bucket, const std::string &objectPath)
 {
-    return std::to_string(std::hash<std::string>{}(bucket + "/" + objectPath));
+    auto h = sha256Hex(bucket + "/" + objectPath);
+    h[12] = '5';
+    const int variant = std::stoi(h.substr(16, 1), nullptr, 16);
+    h[16] = "89ab"[variant % 4];
+    return h.substr(0, 8) + "-" +
+           h.substr(8, 4) + "-" +
+           h.substr(12, 4) + "-" +
+           h.substr(16, 4) + "-" +
+           h.substr(20, 12);
 }
 
 size_t appendBody(char *ptr, size_t size, size_t nmemb, void *userdata)
