@@ -1,4 +1,6 @@
 build/
+.env
+.env.*
 frontend/node_modules/
 frontend/dist/
 vcpkg_installed/

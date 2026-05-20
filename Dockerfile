@@ -5,12 +5,16 @@ ENV VCPKG_DEFAULT_TRIPLET=x64-linux
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    bison \
     ca-certificates \
     cmake \
     curl \
+    flex \
     git \
     ninja-build \
+    perl \
     pkg-config \
+    python3 \
     tar \
     unzip \
     zip \
